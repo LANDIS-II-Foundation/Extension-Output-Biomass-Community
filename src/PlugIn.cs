@@ -5,6 +5,7 @@ using Landis.Library.UniversalCohorts;
 using Landis.SpatialModeling;
 using System;
 using System.IO;
+using System.Text;
 
 namespace Landis.Extension.Output.BiomassCommunity
 {
@@ -76,30 +77,52 @@ namespace Landis.Extension.Output.BiomassCommunity
             //CreateCommunityMap();
             //      * Map is of the cell ID (int)
 
-            int initialMapCode = 3;
-            int mapCode;
+			int initialMapCode = 3;
+			int mapCode = initialMapCode;
+			const int BATCH_SIZE = 5000;
 
-            // write to community csv
-            InitializeCsvCommunity();
+			// write to community csv
+			InitializeCsvCommunity();
 
-            mapCode = initialMapCode;
+			var csvContent = new StringBuilder();
+			int lineCount = 0;
 
-            foreach (ActiveSite site in PlugIn.ModelCore.Landscape)
-            {
-                SiteVars.MapCode[site] = mapCode;
+			try
+			{
+				foreach (ActiveSite site in PlugIn.ModelCore.Landscape)
+				{
+					SiteVars.MapCode[site] = mapCode;
 
-                foreach (ISpeciesCohorts species_cohort in SiteVars.Cohorts[site])
-                {
-                    foreach (ICohort cohort in species_cohort)
-                    {
-                        CommunityCsv.WriteLine("{0},{1},{2},{3},{4:0.0}", mapCode, species_cohort.Species.Name, cohort.Data.Age, cohort.Data.Biomass, cohort.Data.ANPP);
-                    }
-                }
+					foreach (ISpeciesCohorts species_cohort in SiteVars.Cohorts[site])
+					{
+						foreach (ICohort cohort in species_cohort)
+						{
+							csvContent.AppendLine($"{mapCode},{species_cohort.Species.Name},{cohort.Age},{cohort.Biomass}");
+							lineCount++;
 
-                ++mapCode;
-            }
-            
-            CommunityCsv.Close();
+							// Write batch when threshold reached
+							if (lineCount >= BATCH_SIZE)
+							{
+								CommunityCsv.Write(csvContent.ToString());
+								csvContent.Clear();
+								lineCount = 0;
+							}
+						}
+					}
+
+					++mapCode;
+				}
+
+				// Write remaining content
+				if (lineCount > 0)
+				{
+					CommunityCsv.Write(csvContent.ToString());
+				}
+			}
+			finally
+			{
+				CommunityCsv.Close();
+			}
 
             // write to community log
             //InitializeLogCommunity();
