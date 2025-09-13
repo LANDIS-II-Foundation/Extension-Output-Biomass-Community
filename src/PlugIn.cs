@@ -97,7 +97,7 @@ namespace Landis.Extension.Output.BiomassCommunity
 					{
 						foreach (ICohort cohort in species_cohort)
 						{
-							csvContent.AppendLine($"{mapCode},{species_cohort.Species.Name},{cohort.Age},{cohort.Biomass}");
+							csvContent.AppendLine($"{mapCode},{species_cohort.Species.Name},{cohort.Data.Age},{cohort.Data.Biomass}");
 							lineCount++;
 
 							// Write batch when threshold reached
